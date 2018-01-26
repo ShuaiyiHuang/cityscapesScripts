@@ -28,29 +28,43 @@ import os, glob, sys
 
 # cityscapes imports
 sys.path.append( os.path.normpath( os.path.join( os.path.dirname( __file__ ) , '..' , 'helpers' ) ) )
-from csHelpers        import printError
-from json2instanceImg import json2instanceImg
+from csHelpers import printError
+from json2instanceImg import json2instanceImg,json2instanceArr
+from basic_utils import pathtodir
 
 
 # The main method
 def main():
     # Where to look for Cityscapes
+    root='../../../data/cityscapes'
+    os.environ['CITYSCAPES_DATASET']=root
+    store_path=os.path.join(root,'gtFine_car')
+    set='train'
+    city="darmstadt"
+    # if not os.path.exists(store_path):
+    #     os.mkdir(store_path)
+    # set_path=os.path.join(store_path,set)
+    # if not os.path.exists(set_path):
+    #     os.mkdir(set_path)
+    # city_path=os.path.join(set_path,city)
+    # if not os.path.exists(city_path):
+    #     os.mkdir(city_path)
+
     if 'CITYSCAPES_DATASET' in os.environ:
         cityscapesPath = os.environ['CITYSCAPES_DATASET']
     else:
         cityscapesPath = os.path.join(os.path.dirname(os.path.realpath(__file__)),'..','..')
     # how to search for all ground truth
-    searchFine   = os.path.join( cityscapesPath , "gtFine"   , "*" , "*" , "*_gt*_polygons.json" )
-    searchCoarse = os.path.join( cityscapesPath , "gtCoarse" , "*" , "*" , "*_gt*_polygons.json" )
+    searchFine   = os.path.join( cityscapesPath , "gtFine"   , set , "*", "*_gt*_polygons.json" )
+
 
     # search files
     filesFine = glob.glob( searchFine )
     filesFine.sort()
-    filesCoarse = glob.glob( searchCoarse )
-    filesCoarse.sort()
+
 
     # concatenate fine and coarse
-    files = filesFine + filesCoarse
+    files = filesFine
     # files = filesFine # use this line if fine is enough for now.
 
     # quit if we did not find anything
@@ -61,23 +75,53 @@ def main():
     print("Processing {} annotation files".format(len(files)))
 
     # iterate through files
-    progress = 0
-    print("Progress: {:>3} %".format( progress * 100 / len(files) ), end=' ')
-    for f in files:
+    progress = -1
+    numIns_all=0
+    numimg_selected=0
+    # print("Progress: {:>3} %".format( progress * 100 / len(files) ), end=' ')
+    for i,f in enumerate(files):
         # create the output filename
-        dst = f.replace( "_polygons.json" , "_instanceTrainIds.png" )
+        progress += 1
+        print("\rProgress: {:>3} %".format( progress * 100 / len(files) ), end=' ')
 
+        if numIns_all>=1000:
+            break
         # do the conversion
         try:
-            json2instanceImg( f , dst , "trainIds" )
+            # json2instanceImg( f , dst , "trainIds" )
+            print(i,'image............',numIns_all,'ins selected now')
+            insImg_arr,insIds_arr,Sizes_arr,num_instances=json2instanceArr(f,'trainIds',label_tochose='car')
+            if num_instances==0:
+                # progress += 1
+                continue
+            numIns_all+=num_instances
+            for instance,id,size in zip(insImg_arr,insIds_arr,Sizes_arr):
+                from scipy.misc import imread, imsave
+                try:
+                    dst = f.replace("_gtFine_polygons.json", "_"+str(id)+".png")
+                    dst = dst.replace("gtFine", "gtFine_car")
+
+                    n_last=len(dst.split('/')[-1])
+                    parent_dir=dst[:-n_last]
+                    pathtodir(parent_dir)
+
+
+                    imsave(dst,instance)
+                    numimg_selected+=1
+                except:
+                    print("Failed to save: {}".format(id))
+                    raise
         except:
             print("Failed to convert: {}".format(f))
             raise
 
         # status
-        progress += 1
-        print("\rProgress: {:>3} %".format( progress * 100 / len(files) ), end=' ')
+
+
         sys.stdout.flush()
+
+    print('Ins count all',numIns_all,',all imgs',len(files),',seleced imgs',numimg_selected,',average instances per img selected',numIns_all*1.0/numimg_selected,',ave ins per img all',numIns_all*1.0/len(files))
+
 
 
 # call the main

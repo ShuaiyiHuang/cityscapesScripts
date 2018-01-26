@@ -34,6 +34,9 @@
 
 # python imports
 import os, sys, getopt
+from basic_utils import Cropping
+import matplotlib.pyplot as plt
+import numpy as np
 
 # Image processing
 # Check if PIL is actually Pillow as expected
@@ -167,6 +170,111 @@ def createInstanceImage(annotation, encoding):
 
     return instanceImg
 
+def getInstancewithLabel(annotation, encoding,labelfilter='car'):
+    # the size of the image
+    size = ( annotation.imgWidth , annotation.imgHeight )
+    mysize=1.0*annotation.imgWidth*annotation.imgHeight
+
+    # the background
+    if encoding == "ids":
+        backgroundId = name2label['unlabeled'].id
+    elif encoding == "trainIds":
+        backgroundId = name2label['unlabeled'].trainId
+    else:
+        print("Unknown encoding '{}'".format(encoding))
+        return None
+
+    # this is the image that we want to create
+
+
+    # a drawer to draw into the image
+
+
+    # a dict where we keep track of the number of instances that
+    # we already saw of each class
+    nbInstances = {}
+    for labelTuple in labels:
+        if labelTuple.hasInstances:
+            nbInstances[labelTuple.name] = 0
+    instanceImg_arr=[]
+    Ids_arr=[]
+    Sizes_arr=[]
+    # loop over all objects
+    for obj in annotation.objects:
+        label   = obj.label
+        polygon = obj.polygon
+
+        #if the object does not belong to filer label, skip it
+        if obj.label!=labelfilter:
+            continue
+
+        # If the object is deleted, skip it
+        if obj.deleted:
+            continue
+
+        instanceImg = Image.new("I", size, 0)
+        drawer = ImageDraw.Draw(instanceImg)
+        # if the label is not known, but ends with a 'group' (e.g. cargroup)
+        # try to remove the s and see if that works
+        # also we know that this polygon describes a group
+        isGroup = False
+        if ( not label in name2label ) and label.endswith('group'):
+            label = label[:-len('group')]
+            isGroup = True
+
+        if not label in name2label:
+            printError( "Label '{}' not known.".format(label) )
+
+        # the label tuple
+        labelTuple = name2label[label]
+
+        # get the class ID
+        if encoding == "ids":
+            id = labelTuple.id
+        elif encoding == "trainIds":
+            id = labelTuple.trainId
+
+        # if this label distinguishs between individual instances,
+        # make the id a instance ID
+        if labelTuple.hasInstances and not isGroup and id != 255:
+            id = id * 1000 + nbInstances[label]
+
+
+
+        # If the ID is negative that polygon should not be drawn
+        if id < 0:
+            continue
+
+
+
+        try:
+            drawer.polygon( polygon, fill=255 )
+            instanceImgnp=np.asarray(instanceImg)
+
+            #statistic
+            ystart, ystop, xstart, xstop = Cropping.get_boundary(instanceImgnp)
+            masksize=Cropping.get_sizeofbdary(instanceImgnp)
+            masksize_percentage=masksize*1.0/mysize
+
+            #skip truncated one
+            if ystart==0 or xstart==0 or ystop==annotation.imgHeight or xstop==annotation.imgWidth:
+                continue
+
+            if masksize_percentage>=0.05:
+                print ('id,label,masksize,imgsize',id,label,masksize_percentage,size)
+                # plt.imshow(instanceImgnp)
+                # plt.show()
+                instanceImg_arr.append(instanceImgnp)
+                Ids_arr.append(id)
+                Sizes_arr.append(masksize_percentage)
+                nbInstances[label] += 1
+
+        except:
+            print("Failed to draw polygon with label {} and id {}: {}".format(label,id,polygon))
+            raise
+
+    return instanceImg_arr,Ids_arr,Sizes_arr,nbInstances[labelfilter]
+
 # A method that does all the work
 # inJson is the filename of the json file
 # outImg is the filename of the instance image that is generated
@@ -178,6 +286,12 @@ def json2instanceImg(inJson,outImg,encoding="ids"):
     annotation.fromJsonFile(inJson)
     instanceImg = createInstanceImage( annotation , encoding )
     instanceImg.save( outImg )
+
+def json2instanceArr(inJson,encoding="ids",label_tochose='car'):
+    annotation = Annotation()
+    annotation.fromJsonFile(inJson)
+    instanceImg =  getInstancewithLabel( annotation , encoding, label_tochose)
+    return instanceImg
 
 # The main method, if you execute this script directly
 # Reads the command line arguments and calls the method 'json2instanceImg'

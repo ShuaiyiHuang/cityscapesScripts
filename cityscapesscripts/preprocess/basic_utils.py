@@ -292,7 +292,17 @@ class BasicDict(object):
             self.whole_list.append(item)
             self.ntotal_items+=1
 
-
+def pathtodir(path):
+    if not os.path.exists(path):
+        l=[]
+        p = ""
+        l = path.split("/")
+        i = 0
+        while i < len(l):
+            p = p + l[i] + "/"
+            i = i + 1
+            if not os.path.exists(p):
+                os.mkdir(p)
 
 if __name__ == "__main__":
     print()

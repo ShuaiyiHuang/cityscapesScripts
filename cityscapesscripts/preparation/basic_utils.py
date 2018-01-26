@@ -136,6 +136,14 @@ class Cropping(object):
         return boundary
 
     @staticmethod
+    def get_sizeofbdary(mask, expand=0):
+        ystart, ystop, xstart, xstop=Cropping.get_boundary(mask,expand)
+        h=int(ystop-ystart)
+        w=int(xstop-xstart)
+        size=h*w
+        return size
+
+    @staticmethod
     def get_geometric_info(boundary):
         ystart, ystop, xstart, xstop=boundary
         ycenter=int(np.floor((ystart+ystop)/2))
@@ -284,7 +292,17 @@ class BasicDict(object):
             self.whole_list.append(item)
             self.ntotal_items+=1
 
-
+def pathtodir(path):
+    if not os.path.exists(path):
+        l=[]
+        p = ""
+        l = path.split("/")
+        i = 0
+        while i < len(l):
+            p = p + l[i] + "/"
+            i = i + 1
+            if not os.path.exists(p):
+                os.mkdir(p)
 
 if __name__ == "__main__":
     print()

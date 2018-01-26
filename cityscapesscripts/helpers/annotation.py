@@ -125,6 +125,9 @@ class Annotation:
 
     def fromJsonText(self, jsonText):
         jsonDict = json.loads(jsonText)
+        # with open(jsonText) as file_obj:
+        #     jsonDict=json.load(file_obj)
+
         self.imgWidth  = int(jsonDict['imgWidth'])
         self.imgHeight = int(jsonDict['imgHeight'])
         self.objects   = []
@@ -160,6 +163,17 @@ class Annotation:
 
 # a dummy example
 if __name__ == "__main__":
+    import numpy as np
+    import json
+    import pandas as pd
+    root='/home/hsy/work/hsy/repertory/data/cityscapes/gtFine/val/munster'
+    jsonname='munster_000000_000019_gtFine_polygons.json'
+    jsonpath=os.path.join(root,jsonname)
+    # file=np.loadtxt(os.path.join(root,jsonname))
+    # with open(os.path.join(root,jsonname)) as file_obj:
+    #     jsonObj=json.load(file_obj)
+    # # jsonObj=np.load(os.path.join(root,jsonname))
+    # print type(jsonObj),jsonObj['imgWidth']
     obj = CsObject()
     obj.label = 'car'
     obj.polygon.append( Point( 0 , 0 ) )
@@ -168,3 +182,7 @@ if __name__ == "__main__":
     obj.polygon.append( Point( 0 , 1 ) )
 
     print(obj)
+
+    ann=Annotation()
+    ann.fromJsonText(jsonpath)
+    print (ann.objects)
