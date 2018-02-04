@@ -257,11 +257,12 @@ def getInstancewithLabel(annotation, encoding,labelfilter='car'):
             masksize_percentage=masksize*1.0/mysize
 
             #skip truncated one
-            if ystart==0 or xstart==0 or ystop==annotation.imgHeight or xstop==annotation.imgWidth:
-                continue
+            # if ystart==0 or xstart==0 or ystop==annotation.imgHeight or xstop==annotation.imgWidth:
+            #     continue
 
-            if masksize_percentage>=0.05:
-                print ('id,label,masksize,imgsize',id,label,masksize_percentage,size)
+            #0.05
+            if masksize_percentage>=0:
+                # print ('id,label,masksize,imgsize',id,label,masksize_percentage,size)
                 # plt.imshow(instanceImgnp)
                 # plt.show()
                 instanceImg_arr.append(instanceImgnp)

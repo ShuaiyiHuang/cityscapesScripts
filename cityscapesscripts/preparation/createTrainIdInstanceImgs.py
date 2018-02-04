@@ -36,11 +36,11 @@ from basic_utils import pathtodir
 # The main method
 def main():
     # Where to look for Cityscapes
-    root='../../../data/cityscapes'
+    root='../../../data/cityscape'
     os.environ['CITYSCAPES_DATASET']=root
     store_path=os.path.join(root,'gtFine_car')
-    set='train'
-    city="darmstadt"
+    set='val'
+    # city="darmstadt"
     # if not os.path.exists(store_path):
     #     os.mkdir(store_path)
     # set_path=os.path.join(store_path,set)
@@ -82,10 +82,11 @@ def main():
     for i,f in enumerate(files):
         # create the output filename
         progress += 1
-        print("\rProgress: {:>3} %".format( progress * 100 / len(files) ), end=' ')
+        # print("\rProgress: {:>3} %".format( progress * 100 / len(files) ), end=' ')
+        print('Processing........',i,len(files),i*1.0/len(files))
 
-        if numIns_all>=1000:
-            break
+        # if numIns_all>=1000:
+        #     break
         # do the conversion
         try:
             # json2instanceImg( f , dst , "trainIds" )
@@ -99,7 +100,7 @@ def main():
                 from scipy.misc import imread, imsave
                 try:
                     dst = f.replace("_gtFine_polygons.json", "_"+str(id)+".png")
-                    dst = dst.replace("gtFine", "gtFine_car")
+                    dst = dst.replace("gtFine", "gtFine_allcar")
 
                     n_last=len(dst.split('/')[-1])
                     parent_dir=dst[:-n_last]

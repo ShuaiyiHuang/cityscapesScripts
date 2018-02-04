@@ -118,20 +118,35 @@ class Cropping(object):
     def __init__(self):
         return
     @staticmethod
-    def get_boundary(mask, expand=0):
+    def get_boundary(mask, expand=-1):
         '''
         :param mask: input binary mask
         :param expand: 
         :return: boundary of input msk,y-row,x-column
         '''
+        h,w=mask.shape
+
+        #expand=-1 means expand 5% scale of original shape
+
+
         rows = np.any(mask, axis=1)
         cols = np.any(mask, axis=0)
         ymin, ymax = np.where(rows)[0][[0, -1]]
         xmin, xmax = np.where(cols)[0][[0, -1]]
-        ystart = ymin - expand
-        ystop = ymax + 1 + expand
-        xstart = xmin - expand
-        xstop = xmax + 1 + expand
+
+        h_bdry=ymax+1-ymin
+        w_bdry=xmax+1-xmin
+        if expand==-1:
+            expand_h=np.minimum(3,int(0.05*h_bdry)) if h_bdry<=200 else 10
+            expand_w=np.minimum(3,int(0.05*w_bdry)) if w_bdry<=200 else 10
+        else:
+            expand_h=expand
+            expand_w=expand
+
+        ystart = np.maximum(ymin - expand_h,0)
+        ystop = np.minimum(ymax + 1 + expand_h,h)
+        xstart = np.maximum(xmin - expand_w,0)
+        xstop = np.minimum(xmax + 1 + expand_w,w)
         boundary = [ystart, ystop, xstart, xstop]
         return boundary
 

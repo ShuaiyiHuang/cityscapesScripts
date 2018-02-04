@@ -73,6 +73,55 @@ class KNNGraph(object):
 
         return
 
+    def set_query(self,datasetname):
+
+        root = '../../../data/' + datasetname + '/gtFine_car/'
+
+        feapicklepath = root + datasetname + '_car_0126_fea' + set
+        pathpicklepath = root + datasetname + '_car_0126_path' + set
+        singleimgpath = os.path.join(root, set + 'singleimg')
+        singlemaskpath = os.path.join(root, set + 'singlemask')
+
+        gtfeadataset = self.load_txt(feapicklepath)
+        gtpathdataset = self.load_txt(pathpicklepath)
+
+        gtfeadataset=np.array(gtfeadataset,dtype=float)
+        gtpathdataset = np.array(gtpathdataset, dtype=object)
+
+        #ratio set
+        singlemask_set, singleimg_set,ratio_set=self.read_masks(singleimgpath,singlemaskpath,gtpathdataset)
+
+        self.query_dataset=gtfeadataset
+        self.query_pathdataset=gtpathdataset
+        self.query_ratioset=ratio_set
+        self.qeury_datasetname=datasetname
+        self.query_singlemask_set=singlemask_set
+        self.query_singleimg_set=singleimg_set
+
+        print('query set',len(gtfeadataset),datasetname)
+        return
+    def get_queryset(self):
+        return self.query_dataset
+    def get_ratio_queryset(self):
+        return self.query_ratioset
+
+    def set_base(self):
+        singlemask_set, singleimg_set, ratio_set = self.read_masks(self.singleimgpath, self.singlemaskpath,
+                                                                   self.gtpathdataset)
+        self.base_dataset=self.gtfeadataset
+        self.base_pathdataset=self.gtpathdataset
+        self.base_ratioset=ratio_set
+        self.base_datasetname=self.datasetname
+        self.base_singlemask_set=singlemask_set
+        self.base_singleimg_set=singleimg_set
+        print('base set',len(self.base_dataset),self.datasetname)
+        return
+
+    def get_baseset(self):
+        return self.base_dataset
+    def get_ratio_baseset(self):
+        return self.base_ratioset
+
     def load_txt(self,picklepath):
         datasetObj = pickle.load(open(picklepath))
         # dataset = datasetObj.whole_data
@@ -138,7 +187,7 @@ class KNNGraph(object):
 
         ratio_set=np.array(ratio_set)
 
-        return ratio_set,singleimg_set,singlemask_set
+        return singlemask_set,singleimg_set,ratio_set
 
     @staticmethod
     def build_folderdict(path):
@@ -257,45 +306,24 @@ class KNNGraph(object):
         self.save(paths,items)
         return
 
-    def save_top(self,topneighbor_ind,cur_maskfoldername,whetherresize=False,iscityscape=False):
+    def save_top(self, topneighbor_ind, dst_parent, whetherresize, size):
         paths=[]
         items=[]
 
-        mask_name=self.gtpathdataset[self.processid]
-        if iscityscape:
-            imgname=mask_name.split('/')[-1].split('.')[0][:-len('_13000')]
-            insid=mask_name.split('/')[-1].split('.')[0][-len('13000'):]
-            mask_foldername = os.path.join(cur_maskfoldername,imgname)
-            cur_graphdir = os.path.join(self.graphmask_dir, mask_foldername, str(insid))
-            pathtodir(cur_graphdir)
-        else:
-            mask_foldername=cur_maskfoldername
-            cur_graphdir = os.path.join(self.graphmask_dir, mask_foldername, str(self.processid))
-        mask_name_tostore='cur_'+mask_name.split('/')[-1]
-        mask_item=imread(os.path.join(self.singlemaskpath,mask_name))
-        w,h=mask_item.shape
-
-
-        self.checkpath(os.path.join(self.graphmask_dir,mask_foldername))
-        self.checkpath(cur_graphdir)
-
-        maskname_tosave=os.path.join(cur_graphdir,mask_name_tostore)
-        paths.append(maskname_tosave)
-        items.append(mask_item)
-
         for rank,gtind in enumerate(topneighbor_ind):
-            paths.append(os.path.join(cur_graphdir, str(rank)+'_'+self.gtpathdataset[gtind].split('/')[-1]))
-            item=imread(os.path.join(self.singlemaskpath,self.gtpathdataset[gtind]))
+            paths.append(os.path.join(dst_parent, str(rank+1) + '_' + self.base_pathdataset[gtind].split('/')[-1]))
+            item=self.base_singlemask_set[gtind]
             if whetherresize==True:
-                item=BasicTransform.Scale(item,(w,h))
+                item=BasicTransform.Scale(item,size)
             items.append(item)
 
         for rank,gtind in enumerate(topneighbor_ind):
-            paths.append(os.path.join(cur_graphdir, 'img'+str(rank)+'_'+self.gtpathdataset[gtind].split('/')[-1]))
-            item=imread(os.path.join(self.singleimgpath,self.gtpathdataset[gtind]))
+            paths.append(os.path.join(dst_parent, 'img' + str(rank+1) + '_' + self.base_pathdataset[gtind].split('/')[-1]))
+            item=self.base_singleimg_set[gtind]
             items.append(item)
 
         self.save(paths,items)
+        return
 
     def get_visiblemask(ann, name):
         #not implemented yet
@@ -308,36 +336,79 @@ class KNNGraph(object):
 
 
     def mainnew(self):
-        ratio_set, singleimg_set, singlemask_set=self.read_masks(self.singleimgpath,self.singlemaskpath,self.gtpathdataset)
+        # ratio_set, singleimg_set, singlemask_set=self.read_masks(self.singleimgpath,self.singlemaskpath,self.gtpathdataset)
 
-        num_data=len(self.gtfeadataset)
+        num_data=len(self.get_queryset())
 
         startt=time.time()
-        dists=self.calculate_dists_fast(self.gtfeadataset)
+        dists=self.calculate_dists_fast(self.get_queryset(), self.get_baseset())
         endt=time.time()
         print('calculate dist cost time',endt-startt)
 
         ratio_range=[0.9,1.4]
         print('ratio range from',ratio_range)
 
-        topkinds=self.get_topkinds_ratio(dists,self.mk,ratio_range,ratio_set)
-
+        topkinds=self.get_topkinds_ratio(dists,self.mk,ratio_range,self.get_ratio_queryset(),self.get_ratio_baseset())
 
         for i in range(num_data):
             startt=time.time()
             topkneighbor=topkinds[i]
-            if self.datasetname=='cityscape':
-                cur_maskfoldername=self.gtpathdataset[i].split('/')[0]
-                iscityscape=True
-            else:
-                cur_maskfoldername='_'.join(self.gtpathdataset[i].split('.')[0].split('_')[:-1])
-                iscityscape=False
 
-            self.save_top(topkneighbor,cur_maskfoldername,whetherresize=True,iscityscape=iscityscape)
+            dst_parent,size=self.save_query(i)
+
+            self.save_top(topkneighbor,dst_parent,whetherresize=True,size=size)
             self.processid+=1
             endt=time.time()
             print('Done',i,i*1.0/num_data,'cost',endt-startt)
 
+        return
+
+    def save_query(self,i):
+
+        if self.qeury_datasetname == 'cityscape':
+            cur_maskfoldername = self.query_pathdataset[i].split('/')[0]
+            iscityscape = True
+        else:
+            cur_maskfoldername = '_'.join(self.query_pathdataset[i].split('.')[0].split('_')[:-1])
+            iscityscape = False
+        #
+        paths=[]
+        items=[]
+
+        #get destination parent path to store
+        query_mask_name=self.query_pathdataset[self.processid]
+        if iscityscape:
+            imgname=query_mask_name.split('/')[-1].split('.')[0][:-len('_13000')]
+            insid=query_mask_name.split('/')[-1].split('.')[0][-len('13000'):]
+
+            mask_foldername = os.path.join(cur_maskfoldername,imgname)
+            dst_parent = os.path.join(self.graphmask_dir, mask_foldername, str(insid))
+        else:
+            mask_foldername=cur_maskfoldername
+            dst_parent = os.path.join(self.graphmask_dir, mask_foldername, str(self.processid))
+
+        pathtodir(dst_parent)
+
+        #get picture name to store
+        query_mask_name_store='0_qmask_'+query_mask_name.split('/')[-1]
+        query_img_name_store='img0_query'+query_mask_name.split('/')[-1]
+
+        #prepare to store
+        query_mask=self.query_singlemask_set[i]
+        query_img=self.query_singleimg_set[i]
+        dst_query_mask=os.path.join(dst_parent,query_mask_name_store)
+        dst_query_img=os.path.join(dst_parent,query_img_name_store)
+
+        paths.append(dst_query_mask)
+        paths.append(dst_query_img)
+        items.append(query_mask)
+        items.append(query_img)
+        self.save(paths,items)
+
+        size=query_mask.shape
+        return dst_parent,size
+
+    def save_baseneighbor(self):
         return
 
     def calculate_dists(self,gtfeadataset):
@@ -351,18 +422,19 @@ class KNNGraph(object):
 
         return dists
 
-    def calculate_dists_fast(self, data):
+    def calculate_dists_fast(self, querydata, basedata):
 
-        num_gt=len(data)
+        num_query=len(querydata)
+        num_base=len(basedata)
 
-        x_sq=np.square(data).sum(axis=1)
-        y_sq=np.square(data).sum(axis=1)
-        xy=data.dot(data.T)
+        x_sq=np.square(querydata).sum(axis=1)
+        y_sq=np.square(basedata).sum(axis=1)
+        xy=querydata.dot(basedata.T)
         print('x_sq,y_sq,xy shape',x_sq.shape,y_sq.shape,xy.shape)
 
         dists=np.sqrt(xy*(-2)+x_sq.reshape(x_sq.shape[0],1)+y_sq)
         print('dists shape',dists.shape)
-        assert (dists.shape==(num_gt,num_gt))
+        assert (dists.shape==(num_query,num_base))
         return dists
 
     def get_topkinds(self,dists,k):
@@ -373,7 +445,7 @@ class KNNGraph(object):
             topkinds[i]=ind_knearest
         return topkinds
 
-    def get_topkinds_ratio(self,dists,k,ratio_range,ratio_set):
+    def get_topkinds_ratio(self, dists, k, ratio_range, query_ratio_set,base_ratio_set):
         num_data=dists.shape[0]
         topkinds=[]
 
@@ -383,7 +455,7 @@ class KNNGraph(object):
         ratio_candi_count=0
         knearest_count=0
         for i in xrange(num_data):
-            relative_ratiolist=ratio_set[i]*1.0/ratio_set
+            relative_ratiolist= query_ratio_set[i] * 1.0 / base_ratio_set
             candi_ind=np.argwhere((relative_ratiolist<=rhigh) & (relative_ratiolist>=rlow)).flatten()
             candi_dists=dists[i][candi_ind]
             relative_ind_knearest=np.argsort(candi_dists)[:k]
@@ -467,33 +539,33 @@ if __name__ == "__main__":
     # singlemaskpath=os.path.join(root,set+'singlemaskpatch')
 
     #For cityscape
-    # set='train'
+    set='train'
+    datasetname='cityscape'
+    root='../../../data/cityscape/gtFine_car/'
+    graphmask_dir=os.path.join(root,set+'_'+'knn_cocotocity_ratiogt')
+
+    feapicklepath=root+'cityscape_car_0126_fea'+set
+    pathpicklepath=root+'cityscape_car_0126_path'+set
+    singleimgpath=os.path.join(root,set+'singleimg')
+    singlemaskpath=os.path.join(root,set+'singlemask')
+    msize=5
+    knn=3
+
+    # #For cocoamodal
+    # set='test'
+    # datasetname='cocoamodal'
+    # root='../../../data/'+datasetname+'/gtFine_car/'
+    # graphmask_dir=os.path.join(root,set+'_'+'knn_cocotococo_ratiogt')
     #
-    # root='../../../data/cityscapes/gtFine_car/'
-    # graphmask_dir=os.path.join(root,set+'_'+'knn_citytocity_ratiogt')
     #
-    #
-    # feapicklepath=root+'cityscape_car_0126_fea'+set
-    # pathpicklepath=root+'cityscape_car_0126_path'+set
+    # feapicklepath=root+datasetname+'_car_0126_fea'+set
+    # pathpicklepath=root+datasetname+'_car_0126_path'+set
     # singleimgpath=os.path.join(root,set+'singleimg')
     # singlemaskpath=os.path.join(root,set+'singlemask')
     # msize=5
     # knn=3
 
-    #For cocoamodal
-    set='test'
-    datasetname='cocoamodal'
-    root='../../../data/'+datasetname+'/gtFine_car/'
-    graphmask_dir=os.path.join(root,set+'_'+'knn_cocotococo_ratiogt')
-
-
-    feapicklepath=root+datasetname+'_car_0126_fea'+set
-    pathpicklepath=root+datasetname+'_car_0126_path'+set
-    singleimgpath=os.path.join(root,set+'singleimg')
-    singlemaskpath=os.path.join(root,set+'singlemask')
-
-    msize=5
-    knn=3
-
     knngraphObj = KNNGraph(datasetname,feapicklepath,pathpicklepath,singleimgpath,singlemaskpath,graphmask_dir=graphmask_dir,knn=knn,msize=msize)
+    knngraphObj.set_query(datasetname='cocoamodal')
+    knngraphObj.set_base()
     knngraphObj.mainnew()

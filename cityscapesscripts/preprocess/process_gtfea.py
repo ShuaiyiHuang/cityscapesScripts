@@ -15,7 +15,7 @@ def main():
     datasetname='cocoamodal'
 
     cocoamodalPath='../../../data/cocoamodal'
-    cityscapesPath='../../../data/cityscapes'
+    cityscapesPath='../../../data/cityscape'
     # os.environ['CITYSCAPES_DATASET']=root
 
 
@@ -28,25 +28,27 @@ def main():
     # how to search for all ground truth
     if datasetname=='cocoamodal':
         root=cocoamodalPath
-    elif datasetname=='cityscapes':
+    elif datasetname=='cityscape':
         root=cityscapesPath
 
-    set='test'
+    set='train'
+    # carset_name='gtFine_car'
+    # carset_name='gtFine_allcar'
+    carset_name='proposals_bmcomplete_car'
 
     patchroot=os.path.join(root,'gtFine_car')
     picklefea=datasetname+'_car_0126_fea'+set
     picklepath=datasetname+'_car_0126_path'+set
 
     if datasetname=='cocoamodal':
-        searchFine = os.path.join(root, "gtFine_car", set, "*.png")
-    elif datasetname == 'cityscapes':
-        searchFine   = os.path.join( root , "gtFine_car"   , set , "*", "*.png" )
+        searchFine = os.path.join(root, carset_name, set, "*.png")
+    elif datasetname == 'cityscape':
+        searchFine   = os.path.join( root , carset_name  , set , "*", "*.png" )
 
 
     # search files
     filesFine = glob.glob( searchFine )
     filesFine.sort()
-
 
     # concatenate fine and coarse
     files = filesFine
@@ -62,7 +64,6 @@ def main():
 
     # iterate through files
 
-    # print("Progress: {:>3} %".format( progress * 100 / len(files) ), end=' ')
     extractObj = extractFeature(pretrained=True,usecuda=True)
 
     gtfeaObj=gtmaskfeaDataset()
@@ -73,7 +74,8 @@ def main():
         print('Processing........',i,len(files),i*1.0/len(files))
         gtmask=imread(f)
 
-        dst_img_temp=f.replace('gtFine_car','leftImg8bit')
+        # dst_img_temp=f.replace(carset_name,'leftImg8bit')
+        dst_img_temp=f.replace(carset_name,'leftImg8bit_car')
         if datasetname=='cityscape':
             dst_img_list=dst_img_temp.split('.')
             dst_img_list[-2]=dst_img_list[-2][:-len('13000')]+'leftImg8bit'
@@ -104,39 +106,39 @@ def main():
 
         #if singlemask or singleimg not exist, create one
         if not os.path.isfile(dst_sinmask):
-            boundary=Cropping.get_boundary(gtmask,expand=0)
+            boundary=Cropping.get_boundary(gtmask,expand=-1)
             sinmask=Cropping.trim(gtmask,boundary)
             imsave(dst_sinmask,sinmask)
         else:
             sinmask=imread(dst_sinmask)
         if not os.path.isfile(dst_sinimg):
             bool_gtmask=gtmask.astype(bool).astype(int)
-            boundary=Cropping.get_boundary(gtmask,expand=0)
+            boundary=Cropping.get_boundary(gtmask,expand=-1)
             # masked_img=np.expand_dims(bool_gtmask,2)*img
             sinimg=Cropping.trim(img,boundary)
             imsave(dst_sinimg,sinimg)
         else:
             sinimg=imread(dst_sinimg)
 
-        #Extract feature
-        img_batch=[sinimg]
-        maskfeature_matrix= build_maskfeature_matrix(img_batch, extractObj)
-
-        if datasetname=='cityscape':
-            relative_path='/'.join(f.split('/')[-2:])
-        elif datasetname=='cocoamodal':
-            relative_path = f.split('/')[-1]
-        else:
-            raise
-
-        gtfeaObj.update(maskfeature_matrix)
-        gtpathObj.update([relative_path])
-
-        with open(os.path.join(patchroot, picklefea), 'wb') as handle:
-            pickle.dump(gtfeaObj, handle)
-
-        with open(os.path.join(patchroot, picklepath), 'wb') as handle:
-            pickle.dump(gtpathObj, handle)
+        # #Extract feature
+        # img_batch=[sinimg]
+        # maskfeature_matrix= build_maskfeature_matrix(img_batch, extractObj)
+        #
+        # if datasetname=='cityscape':
+        #     relative_path='/'.join(f.split('/')[-2:])
+        # elif datasetname=='cocoamodal':
+        #     relative_path = f.split('/')[-1]
+        # else:
+        #     raise
+        #
+        # gtfeaObj.update(maskfeature_matrix)
+        # gtpathObj.update([relative_path])
+        #
+        # with open(os.path.join(patchroot, picklefea), 'wb') as handle:
+        #     pickle.dump(gtfeaObj, handle)
+        #
+        # with open(os.path.join(patchroot, picklepath), 'wb') as handle:
+        #     pickle.dump(gtpathObj, handle)
 
     return
 
