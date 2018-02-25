@@ -5,14 +5,15 @@ from scipy.misc import imread, imsave
 import matplotlib.pyplot as plt
 import numpy as np
 import pickle
-from utils import *
+from cityscapesscripts.preprocess.utils import *
+
 
 # cityscapes imports
 sys.path.append( os.path.normpath( os.path.join( os.path.dirname( __file__ ) , '..' , 'helpers' ) ) )
 
 def main():
-    datasetname='cityscape'
-    # datasetname='cocoamodal'
+    # datasetname='cityscape'
+    datasetname='cocoamodal'
 
     cocoamodalPath='../../../data/cocoamodal'
     cityscapesPath='../../../data/cityscape'
@@ -34,7 +35,9 @@ def main():
     set='train'
     # carset_name='gtFine_car'
     # carset_name='gtFine_allcar'
-    carset_name='gtFine_base_car'
+    # carset_name='gtFine_base_car_bigger'
+    # carset_name='gtFine_complete_car'
+    carset_name='gtFine_amodal_car_clean'
 
     patchroot=os.path.join(root,'gtFine_car')
     picklefea=datasetname+'_car_0126_fea'+set
@@ -64,10 +67,10 @@ def main():
 
     # iterate through files
 
-    extractObj = extractFeature(pretrained=True,usecuda=True)
+    # extractObj = extractFeature(pretrained=True,usecuda=True)
 
-    gtfeaObj=gtmaskfeaDataset()
-    gtpathObj=gtpathDataset()
+    # gtfeaObj=gtmaskfeaDataset()
+    # gtpathObj=gtpathDataset()
 
     for i,f in enumerate(files):
 

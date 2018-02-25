@@ -40,8 +40,8 @@ def main():
     # carset_name='gtFine_car'
     # carset_name='gtFine_allcar'
     # carset_name='proposals_bmcomplete_car'
-    carset_name='gtFine_complete_car'
-    carset_proposals_name='proposals_bmvisible_car'
+    carset_name='gtFine_complete'
+    carset_proposals_name='proposals_bmvisible'
     # carset_proposals_name='gtFine_visible_car'
 
     patchroot=os.path.join(root,carset_proposals_name)
@@ -50,10 +50,10 @@ def main():
     picklename_bbox=set+'_carbbox'
 
     if datasetname=='cocoamodal':
-        searchFine = os.path.join(root, carset_name, set,"*.png")
-        searchProposals=os.path.join(root,carset_proposals_name,set,"*.png")
-        # searchFine = os.path.join(root, carset_name, set, "*","*.png")
-        # searchProposals=os.path.join(root,carset_proposals_name,set,"*","*.png")
+        # searchFine = os.path.join(root, carset_name, set,"*.png")
+        # searchProposals=os.path.join(root,carset_proposals_name,set,"*.png")
+        searchFine = os.path.join(root, carset_name, set, "*","*.png")
+        searchProposals=os.path.join(root,carset_proposals_name,set,"*","*.png")
     elif datasetname == 'cityscape':
         searchFine   = os.path.join( root , carset_name  , set , "*", "*.png" )
 
@@ -123,26 +123,26 @@ def main():
             print ('no image found in:{}',dst_img)
 
         # #if singlemask or singleimg not exist, create one
-        # if not os.path.isfile(dst_sin_gtmask):
-        #     # unionmask=(gtmask.astype(bool)+posalmask.astype(bool)).astype(int)
-        #     # boundary=Cropping.get_boundary(unionmask,expand=-1)
-        #     boundary=Cropping.get_boundary(posalmask,expand=0.1)
-        #
-        #     sin_gtmask=Cropping.trim(gtmask,boundary)
-        #     sin_posalmask = Cropping.trim(posalmask, boundary)
-        #     imsave(dst_sin_gtmask,sin_gtmask)
-        #     imsave(dst_sin_posalmask,sin_posalmask)
-        # else:
-        #     sin_gtmask=imread(dst_sin_gtmask)
-        #     sin_posalmask=imread(dst_sin_posalmask)
-        # if not os.path.isfile(dst_sinimg):
-        #     bool_gtmask=gtmask.astype(bool).astype(int)
-        #     boundary=Cropping.get_boundary(gtmask,expand=-1)
-        #     # masked_img=np.expand_dims(bool_gtmask,2)*img
-        #     sinimg=Cropping.trim(img,boundary)
-        #     imsave(dst_sinimg,sinimg)
-        # else:
-        #     sinimg=imread(dst_sinimg)
+        if not os.path.isfile(dst_sin_gtmask):
+            # unionmask=(gtmask.astype(bool)+posalmask.astype(bool)).astype(int)
+            # boundary=Cropping.get_boundary(unionmask,expand=-1)
+            boundary=Cropping.get_boundary(posalmask,expand=0.1)
+
+            sin_gtmask=Cropping.trim(gtmask,boundary)
+            sin_posalmask = Cropping.trim(posalmask, boundary)
+            imsave(dst_sin_gtmask,sin_gtmask)
+            imsave(dst_sin_posalmask,sin_posalmask)
+        else:
+            sin_gtmask=imread(dst_sin_gtmask)
+            sin_posalmask=imread(dst_sin_posalmask)
+        if not os.path.isfile(dst_sinimg):
+            bool_gtmask=gtmask.astype(bool).astype(int)
+            boundary=Cropping.get_boundary(gtmask,expand=-1)
+            # masked_img=np.expand_dims(bool_gtmask,2)*img
+            sinimg=Cropping.trim(img,boundary)
+            imsave(dst_sinimg,sinimg)
+        else:
+            sinimg=imread(dst_sinimg)
 
         #bbox gt
         id=dst_sin_posalmask.split('/')[-1]
@@ -168,7 +168,7 @@ def main():
         #
         # with open(os.path.join(patchroot, picklepath), 'wb') as handle:
         #     pickle.dump(gtpathObj, handle)
-
+    assert (len(bbox_dict_total)==len(files))
     with open(os.path.join(patchroot, picklename_bbox), 'wb') as handle:
         pickle.dump(bbox_dict_total, handle)
 

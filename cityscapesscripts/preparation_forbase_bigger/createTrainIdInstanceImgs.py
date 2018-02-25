@@ -101,7 +101,7 @@ def main():
                 try:
                     dst = f.replace("_gtFine_polygons.json", "_"+str(id)+".png")
                     # dst = dst.replace("gtFine", "gtFine_base_car")
-                    dst = dst.replace("gtFine", "gtFine_base_car")
+                    dst = dst.replace("gtFine", "gtFine_base_car_bigger")
 
                     n_last=len(dst.split('/')[-1])
                     parent_dir=dst[:-n_last]

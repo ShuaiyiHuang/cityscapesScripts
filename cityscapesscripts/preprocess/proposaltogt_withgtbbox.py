@@ -36,17 +36,16 @@ def main():
     elif datasetname=='cityscape':
         root=cityscapesPath
 
-    set='train'
+    set='test'
     # carset_name='gtFine_car'
     # carset_name='gtFine_allcar'
     # carset_name='proposals_bmcomplete_car'
     carset_name='gtFine_complete_car'
-    carset_proposals_name='proposals_bmvisible_car'
+    carset_proposals_name='proposals_bmvisible_car_withgtbbox'
     # carset_proposals_name='gtFine_visible_car'
 
     patchroot=os.path.join(root,carset_proposals_name)
-    picklefea=datasetname+'_car_0126_fea'+set
-    picklepath=datasetname+'_car_0126_path'+set
+
     picklename_bbox=set+'_carbbox'
 
     if datasetname=='cocoamodal':
@@ -122,33 +121,33 @@ def main():
         except:
             print ('no image found in:{}',dst_img)
 
-        # #if singlemask or singleimg not exist, create one
-        # if not os.path.isfile(dst_sin_gtmask):
-        #     # unionmask=(gtmask.astype(bool)+posalmask.astype(bool)).astype(int)
-        #     # boundary=Cropping.get_boundary(unionmask,expand=-1)
-        #     boundary=Cropping.get_boundary(posalmask,expand=0.1)
-        #
-        #     sin_gtmask=Cropping.trim(gtmask,boundary)
-        #     sin_posalmask = Cropping.trim(posalmask, boundary)
-        #     imsave(dst_sin_gtmask,sin_gtmask)
-        #     imsave(dst_sin_posalmask,sin_posalmask)
-        # else:
-        #     sin_gtmask=imread(dst_sin_gtmask)
-        #     sin_posalmask=imread(dst_sin_posalmask)
-        # if not os.path.isfile(dst_sinimg):
-        #     bool_gtmask=gtmask.astype(bool).astype(int)
-        #     boundary=Cropping.get_boundary(gtmask,expand=-1)
-        #     # masked_img=np.expand_dims(bool_gtmask,2)*img
-        #     sinimg=Cropping.trim(img,boundary)
-        #     imsave(dst_sinimg,sinimg)
-        # else:
-        #     sinimg=imread(dst_sinimg)
+        #if singlemask or singleimg not exist, create one
+        if not os.path.isfile(dst_sin_gtmask):
+            unionmask=(gtmask.astype(bool)+posalmask.astype(bool)).astype(int)
+            boundary=Cropping.get_boundary(unionmask,expand=0.1)
+
+            sin_gtmask=Cropping.trim(gtmask,boundary)
+            sin_posalmask = Cropping.trim(posalmask, boundary)
+            imsave(dst_sin_gtmask,sin_gtmask)
+            imsave(dst_sin_posalmask,sin_posalmask)
+        else:
+            sin_gtmask=imread(dst_sin_gtmask)
+            sin_posalmask=imread(dst_sin_posalmask)
+        if not os.path.isfile(dst_sinimg):
+            bool_gtmask=gtmask.astype(bool).astype(int)
+            boundary=Cropping.get_boundary(gtmask,expand=-1)
+            # masked_img=np.expand_dims(bool_gtmask,2)*img
+            sinimg=Cropping.trim(img,boundary)
+            imsave(dst_sinimg,sinimg)
+        else:
+            sinimg=imread(dst_sinimg)
 
         #bbox gt
         id=dst_sin_posalmask.split('/')[-1]
         bbox_data=Cropping.get_det_amodaldata(posalmask,gtmask,h_target=224,w_target=224)
         bbox_dict_total[id]=bbox_data
         print(bbox_data.keys())
+
         # #Extract feature
         # img_batch=[sinimg]
         # maskfeature_matrix= build_maskfeature_matrix(img_batch, extractObj)
@@ -159,7 +158,7 @@ def main():
         #     relative_path = f_gt.split('/')[-1]
         # else:
         #     raise
-        #
+
         # gtfeaObj.update(maskfeature_matrix)
         # gtpathObj.update([relative_path])
         #
