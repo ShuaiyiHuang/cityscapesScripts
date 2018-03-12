@@ -31,7 +31,7 @@ def main():
     elif datasetname=='cityscape':
         root=cityscapesPath
 
-    set='train'
+    set='val'
     maskset_name = 'gtFine_allperson'
     # maskset_name='gtFine_car'
     # maskset_name='gtFine_allcar'

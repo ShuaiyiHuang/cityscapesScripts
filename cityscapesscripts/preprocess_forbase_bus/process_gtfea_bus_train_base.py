@@ -32,7 +32,7 @@ def main():
         root=cityscapesPath
 
     set='train'
-    maskset_name = 'gtFine_allperson'
+    maskset_name = 'gtFine_base_bus'
     # maskset_name='gtFine_car'
     # maskset_name='gtFine_allcar'
 
@@ -105,8 +105,7 @@ def main():
         else:
             sinmask=imread(dst_sinmask)
         if not os.path.isfile(dst_sinimg):
-            bool_gtmask=gtmask.astype(bool).astype(int)
-            boundary=Cropping.get_boundary(gtmask,expand=-1)
+            boundary=Cropping.get_boundary(gtmask,expand=0.1) #change expand=-1 to 0.1, the same as mask 0308
             # masked_img=np.expand_dims(bool_gtmask,2)*img
             sinimg=Cropping.trim(img,boundary)
             imsave(dst_sinimg,sinimg)

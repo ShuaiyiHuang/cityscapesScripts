@@ -38,11 +38,11 @@ def main():
     # Where to look for Cityscapes
     root='../../../data/cityscape'
     os.environ['CITYSCAPES_DATASET']=root
-    store_path='gtFine_allperson'
-    label_tochose = 'person'
-    set='train'
+    store_path='gtFine_allbus'
+    label_tochose = 'bus'
+    set='val'
     gtset_name='gtFine'
-
+    print(label_tochose,set,gtset_name,store_path)
     # city="darmstadt"
     # if not os.path.exists(store_path):
     #     os.mkdir(store_path)

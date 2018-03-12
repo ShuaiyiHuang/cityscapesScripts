@@ -39,10 +39,10 @@ def main():
     root='../../../data/cityscape'
     os.environ['CITYSCAPES_DATASET']=root
     store_path='gtFine_allperson'
-    label_tochose = 'person'
+    label_tochose = 'rider'
     set='train'
     gtset_name='gtFine'
-
+    print(label_tochose,set,gtset_name,store_path)
     # city="darmstadt"
     # if not os.path.exists(store_path):
     #     os.mkdir(store_path)

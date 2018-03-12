@@ -106,7 +106,7 @@ def main():
             sinmask=imread(dst_sinmask)
         if not os.path.isfile(dst_sinimg):
             bool_gtmask=gtmask.astype(bool).astype(int)
-            boundary=Cropping.get_boundary(gtmask,expand=-1)
+            boundary=Cropping.get_boundary(gtmask,expand=0.1)
             # masked_img=np.expand_dims(bool_gtmask,2)*img
             sinimg=Cropping.trim(img,boundary)
             imsave(dst_sinimg,sinimg)

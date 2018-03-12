@@ -32,7 +32,7 @@ def main():
         root=cityscapesPath
 
     set='train'
-    maskset_name = 'gtFine_allperson'
+    maskset_name = 'gtFine_allbus'
     # maskset_name='gtFine_car'
     # maskset_name='gtFine_allcar'
 

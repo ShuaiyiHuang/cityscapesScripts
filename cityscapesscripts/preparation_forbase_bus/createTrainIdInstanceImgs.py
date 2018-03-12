@@ -25,24 +25,21 @@
 # python imports
 from __future__ import print_function
 import os, glob, sys
-from scipy.misc import imread, imsave
+
 # cityscapes imports
 sys.path.append( os.path.normpath( os.path.join( os.path.dirname( __file__ ) , '..' , 'helpers' ) ) )
 from csHelpers import printError
-from json2instanceImg import json2instanceImg,json2instanceArr
+from json2instanceImg import json2instanceArr
 from basic_utils import pathtodir
-
+from scipy.misc import imread, imsave
 
 # The main method
 def main():
     # Where to look for Cityscapes
     root='../../../data/cityscape'
     os.environ['CITYSCAPES_DATASET']=root
-    store_path='gtFine_allperson'
-    label_tochose = 'person'
+    store_path=os.path.join(root,'gtFine_car')
     set='train'
-    gtset_name='gtFine'
-
     # city="darmstadt"
     # if not os.path.exists(store_path):
     #     os.mkdir(store_path)
@@ -58,7 +55,7 @@ def main():
     else:
         cityscapesPath = os.path.join(os.path.dirname(os.path.realpath(__file__)),'..','..')
     # how to search for all ground truth
-    searchFine   = os.path.join( cityscapesPath , gtset_name   , set , "*", "*_gt*_polygons.json" )
+    searchFine   = os.path.join( cityscapesPath , "gtFine"   , set , "*", "*_gt*_polygons.json" )
 
 
     # search files
@@ -94,17 +91,17 @@ def main():
         try:
             # json2instanceImg( f , dst , "trainIds" )
             print(i,'image............',numIns_all,'ins selected now')
-            insImg_arr,insIds_arr,Sizes_arr,num_instances=json2instanceArr(f,'trainIds',label_tochose=label_tochose)
+            insImg_arr,insIds_arr,Sizes_arr,num_instances=json2instanceArr(f,'trainIds',label_tochose='bus')
             if num_instances==0:
                 # progress += 1
                 continue
             numIns_all+=num_instances
-            numimg_selected += 1
             for instance,id,size in zip(insImg_arr,insIds_arr,Sizes_arr):
 
                 try:
                     dst = f.replace("_gtFine_polygons.json", "_"+str(id)+".png")
-                    dst = dst.replace("gtFine", store_path)
+                    # dst = dst.replace("gtFine", "gtFine_base_car")
+                    dst = dst.replace("gtFine", "gtFine_base_bus")
 
                     n_last=len(dst.split('/')[-1])
                     parent_dir=dst[:-n_last]
@@ -112,7 +109,7 @@ def main():
 
 
                     imsave(dst,instance)
-
+                    numimg_selected+=1
                 except:
                     print("Failed to save: {}".format(id))
                     raise

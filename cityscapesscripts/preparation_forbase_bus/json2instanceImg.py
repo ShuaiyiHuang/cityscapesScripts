@@ -189,8 +189,7 @@ def getInstancewithLabel(annotation, encoding,labelfilter='car'):
                 continue
 
             #0.05 gt_Fine_base
-            #0.02 for bigger
-            if masksize_percentage>=0.02:
+            if masksize_percentage>=0:
                 # print ('id,label,masksize,imgsize',id,label,masksize_percentage,size)
                 # plt.imshow(instanceImgnp)
                 # plt.show()
